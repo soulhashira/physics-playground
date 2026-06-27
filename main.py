@@ -260,14 +260,16 @@ class Game:
 
     def _draw_wells(self):
         for w in self.wells:
-            # Pulsing glow effect
+            wx, wy = int(w.x), int(w.y)
+            # Concentric rings for glow (no alpha surfaces)
             for r in range(50, 10, -5):
-                alpha = max(10, 60 - r)
-                surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-                pygame.draw.circle(surf, (*WELL_OUTER, alpha), (r, r), r)
-                self.screen.blit(surf, (int(w.x) - r, int(w.y) - r))
-            pygame.draw.circle(self.screen, WELL_INNER, (int(w.x), int(w.y)), w.radius)
-            pygame.draw.circle(self.screen, (255, 200, 150), (int(w.x), int(w.y)), 6)
+                t = 1.0 - (r - 10) / 40
+                c = (int(WELL_OUTER[0] + (WELL_INNER[0] - WELL_OUTER[0]) * t),
+                     int(WELL_OUTER[1] + (WELL_INNER[1] - WELL_OUTER[1]) * t),
+                     int(WELL_OUTER[2] + (WELL_INNER[2] - WELL_OUTER[2]) * t))
+                pygame.draw.circle(self.screen, c, (wx, wy), r, 2)
+            pygame.draw.circle(self.screen, WELL_INNER, (wx, wy), w.radius)
+            pygame.draw.circle(self.screen, (255, 200, 150), (wx, wy), 6)
 
     def _draw_pendulums(self):
         for p in self.pendulums:
@@ -283,14 +285,20 @@ class Game:
     def _draw_trail(self, ball):
         trail = ball.trail
         n = len(trail)
+        if n < 2:
+            return
+        bc = ball.base_color
         for i in range(1, n):
-            alpha = int(180 * i / n)
-            col = (*ball.base_color[:3], alpha)
-            surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-            pygame.draw.line(surf, col,
-                             (int(trail[i - 1][0]), int(trail[i - 1][1])),
-                             (int(trail[i][0]), int(trail[i][1])), 2)
-            self.screen.blit(surf, (0, 0))
+            t = i / n
+            r = int(bc[0] * t)
+            g = int(bc[1] * t)
+            b = int(bc[2] * t)
+            pygame.draw.line(
+                self.screen, (r, g, b),
+                (int(trail[i - 1][0]), int(trail[i - 1][1])),
+                (int(trail[i][0]), int(trail[i][1])),
+                max(1, int(3 * t)),
+            )
 
     def _draw_balls(self):
         for ball in self.balls:
